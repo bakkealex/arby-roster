@@ -1,6 +1,7 @@
 # Note
 
 This project is a work in progress and is not feature-complete.
+This application is intended for a Norwegian audience, with localization and language support for Norwegian users.
 
 # Next.js & Prisma Postgres Auth Starter
 
