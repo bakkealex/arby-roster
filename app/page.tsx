@@ -1,56 +1,132 @@
 export const dynamic = "force-dynamic"; // This disables SSG and ISR
 
-import prisma from "@/lib/prisma";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { checkPostTableExists } from "@/lib/db-utils";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { checkUserTableExists } from "@/lib/db-utils";
+import { config } from "@/lib/config";
 
-export default async function Home() {
-  // Check if the post table exists
-  const tableExists = await checkPostTableExists();
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+  const hasDatabase = await checkUserTableExists();
 
-  // If the post table doesn't exist, redirect to setup page
-  if (!tableExists) {
-    redirect("/setup");
+  if (!hasDatabase) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex flex-col items-center justify-center p-8">
+        <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm border border-neutral-200 p-8 text-center">
+          <h1 className="text-3xl font-bold mb-6 text-primary-800">
+            Velkommen til {config.app.name}
+          </h1>
+          <p className="text-neutral-600 mb-8">
+            Databasen er ikke satt opp enda. Følg instruksjonene nedenfor for å komme i gang.
+          </p>
+          <Link
+            href="/setup"
+            className="bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors duration-200 text-lg font-medium"
+          >
+            Sett opp database
+          </Link>
+        </div>
+      </div>
+    );
   }
 
-  const posts = await prisma.post.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 6,
-    include: {
-      author: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex flex-col items-center justify-center p-8">
+        <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm border border-neutral-200 p-8 text-center">
+          <h1 className="text-4xl font-bold mb-6 text-primary-800">
+            {config.app.name}
+          </h1>
+          <p className="text-xl text-neutral-600 mb-8">
+            {config.app.description}
+          </p>
+          <div className="space-y-4">
+            <Link
+              href="/login"
+              className="block bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors duration-200 text-lg font-medium"
+            >
+              Logg inn
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-24 px-8">
-      <h1 className="text-5xl font-extrabold mb-12 text-[#333333]">Recent Posts</h1>
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 w-full max-w-6xl mb-8">
-        {posts.map((post) => (
-          <Link key={post.id} href={`/posts/${post.id}`} className="group">
-            <div className="border rounded-lg shadow-md bg-white p-6 hover:shadow-lg transition-shadow duration-300">
-              <h2 className="text-2xl font-semibold text-gray-900 group-hover:underline mb-2">{post.title}</h2>
-              <p className="text-sm text-gray-500">by {post.author ? post.author.name : "Anonymous"}</p>
-              <p className="text-xs text-gray-400 mb-4">
-                {new Date(post.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+    <div className="min-h-screen bg-neutral-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-primary-800 mb-2">
+            Velkommen, {session.user.name}
+          </h1>
+          <p className="text-neutral-600">
+            Rolle: {session.user.role === 'EMPLOYEE' ? 'Ansatt' : session.user.role === 'CUSTOMER' ? 'Kunde' : 'Admin'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
+            <h2 className="text-xl font-semibold mb-4 text-primary-700">Kalender</h2>
+            <p className="text-neutral-600 mb-4">
+              {session.user.role === 'EMPLOYEE'
+                ? 'Sett din tilgjengelighet og se kommende oppdrag'
+                : 'Se tilgjengelige vektere og book tjenester'
+              }
+            </p>
+            <Link
+              href="/calendar"
+              className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors duration-200 text-sm font-medium"
+            >
+              Åpne kalender
+            </Link>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
+            <h2 className="text-xl font-semibold mb-4 text-primary-700">Profil</h2>
+            <p className="text-neutral-600 mb-4">
+              Se og oppdater din profilinformasjon
+            </p>
+            <Link
+              href="/profile"
+              className="bg-accent-600 text-white px-4 py-2 rounded-md hover:bg-accent-700 transition-colors duration-200 text-sm font-medium"
+            >
+              Min profil
+            </Link>
+          </div>
+
+          {session.user.role === 'ADMIN' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
+              <h2 className="text-xl font-semibold mb-4 text-primary-700">Administrasjon</h2>
+              <p className="text-neutral-600 mb-4">
+                Administrer brukere, oppdrag og systeminnstillinger
               </p>
-              <div className="relative">
-                <p className="text-gray-700 leading-relaxed line-clamp-2">{post.content || "No content available."}</p>
-                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-gray-50 to-transparent" />
-              </div>
+              <Link
+                href="/admin/users"
+                className="bg-secondary-600 text-white px-4 py-2 rounded-md hover:bg-secondary-700 transition-colors duration-200 text-sm font-medium"
+              >
+                Admin panel
+              </Link>
             </div>
-          </Link>
-        ))}
+          )}
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
+            <h2 className="text-xl font-semibold mb-4 text-primary-700">Booking</h2>
+            <p className="text-neutral-600 mb-4">
+              {session.user.role === 'CUSTOMER'
+                ? 'Se dine bookinger og send nye forespørsler'
+                : 'Se tildelte oppdrag og oppdater status'
+              }
+            </p>
+            <Link
+              href="/booking"
+              className="bg-primary-500 text-white px-4 py-2 rounded-md hover:bg-primary-600 transition-colors duration-200 text-sm font-medium"
+            >
+              Se bookinger
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

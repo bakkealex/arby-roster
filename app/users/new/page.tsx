@@ -34,7 +34,7 @@ export default function NewUser() {
         </div>
         <div>
           <label htmlFor="email" className="flex text-lg font-medium mb-2 items-center">
-            Email 
+            Email
             <span className="ml-2 px-2 py-1 text-xs font-semibold text-white bg-gray-500 rounded-lg">
               Required
             </span>
@@ -48,7 +48,7 @@ export default function NewUser() {
             className="w-full px-4 py-2 border rounded-lg"
           />
         </div>
-        <button type="submit" className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
+        <button type="submit" className="w-full bg-primary-600 text-white py-3 rounded-md hover:bg-primary-700 transition-colors duration-200 font-medium">
           Create User
         </button>
       </Form>

@@ -1,33 +1,98 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("PRISMA_DATABASE_URL")
 }
 
 model User {
-  id       String  @id @default(cuid())
-  name     String?
-  email    String  @unique
-  password String
-  posts    Post[]
+  id                 String          @id @default(cuid())
+  name               String
+  email              String          @unique
+  password           String
+  courses            String?
+  createdAt          DateTime        @default(now())
+  employeeNumber     String?         @unique
+  feedback           String?
+  gdprConsent        Boolean         @default(false)
+  gdprConsentDate    DateTime?
+  location           String?
+  notes              String?
+  operativeStatus    EmployeeStatus?
+  phone              String?
+  potential          String?
+  recertification    DateTime?
+  role               UserRole        @default(PENDING)
+  updatedAt          DateTime        @updatedAt
+  approvedAt         DateTime?
+  approvedBy         String?
+  gdprConsentVersion String?
+  isApproved         Boolean         @default(false)
+  availability       Availability[]
+  bookingsAsCustomer Booking[]       @relation("CustomerBookings")
+  bookingsAsEmployee Booking[]       @relation("EmployeeBookings")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
+model Availability {
+  id          String    @id @default(cuid())
+  userId      String
+  date        DateTime
+  isAvailable Boolean   @default(true)
+  startTime   DateTime?
+  endTime     DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  customerId  String
+  employeeId  String
+  date        DateTime
+  startTime   DateTime
+  endTime     DateTime
+  location    String
+  description String?
+  status      BookingStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  customer    User          @relation("CustomerBookings", fields: [customerId], references: [id])
+  employee    User          @relation("EmployeeBookings", fields: [employeeId], references: [id])
+}
+
+model GdprInfo {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  version   String   @default("1.0")
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String?
-  author    User?    @relation(fields: [authorId], references: [id])
+}
+
+enum UserRole {
+  EMPLOYEE
+  CUSTOMER
+  ADMIN
+  PENDING
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  RESERVED
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
 }
