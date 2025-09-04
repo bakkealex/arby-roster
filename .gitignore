@@ -40,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env*.local
+
+/src/generated/prisma
+
+# notes
+*.md
+
+# unused files
+*_old_/
+*_old_*.*
